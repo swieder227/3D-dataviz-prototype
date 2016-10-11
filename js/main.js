@@ -1,4 +1,4 @@
-var scene, renderer, camera, controls;
+var container, scene, renderer, camera, controls, stats;
 
 var grid_dimensions = {
   width: 50,
@@ -7,6 +7,10 @@ var grid_dimensions = {
 }
 
 function initialize(){
+
+  // Container
+  container = document.getElementById('container');
+
   // Scene
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xffffff );
@@ -14,7 +18,7 @@ function initialize(){
   // Renderer
   renderer = new THREE.WebGLRenderer();
   renderer.setSize( window.innerWidth, window.innerHeight );
-  document.querySelector('#container').appendChild( renderer.domElement );
+  container.appendChild( renderer.domElement );
 
   // Camera
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -29,10 +33,20 @@ function initialize(){
   axis_helper.position.z = -30;
   scene.add(axis_helper);
 
+  // Stats
+  stats = new Stats();
+  container.appendChild(stats.dom);
+
+  // Graphs
   setupGraphGrids();
   drawGraph();
 }
 
+/**
+ *
+ * Sets up the 3D graph axis/grids
+ * Creates multiple grids, adds to global scene
+ */
 function setupGraphGrids(){
 
   let grid_object = new THREE.Object3D();
@@ -72,6 +86,12 @@ function setupGraphGrids(){
   scene.add( grid_object );
 }
 
+/**
+ *
+ * Create a rectangular grid in 3D space
+ * @param  {Object} options - config to describe the grid
+ * @return {THREE.Object3D} the THREE.js object
+ */
 function createGrid(options){
   let config = options || {
     height: 50,
@@ -110,41 +130,52 @@ function createGrid(options){
   return grid_object;
 }
 
+/**
+ *
+ * Map a given value from one range to the same value in another range
+ * @param  {Array} from - current range of values [0,100] => 0, 1, 2... 100
+ * @param  {Array} to - desired range of values [0,1] => 0, 0.1, 0.2 ... 1
+ * @param  {Number} s - input value
+ * @return {Number} new value within `to` range
+ */
 function mapRange(from, to, s) {
   return to[0] + (s - from[0]) * (to[1] - to[0]) / (from[1] - from[0]);
 };
 
-var ggeo;
+var graph_geometry; // temp global for debugging
 function drawGraph(){
+
+  // temp
+  let data = data_brexit;
+  let data_max = 2;
 
   let graph_width = grid_dimensions.width * 2,
       graph_height = grid_dimensions.height * 2,
       graph_y_offset = grid_dimensions.height;
 
-  ggeo = new THREE.PlaneGeometry( graph_width, graph_height, 500, 1 );
+  graph_geometry = new THREE.PlaneGeometry( graph_width, graph_height, data.length / 2, 1 );
 
   // Gets the # of verts in 1st half of plane
   // 1/2 verts of plane are top, 1/2 verts of plane are bottom
-  let vert_length = Math.floor((ggeo.vertices.length - 1) / 2)
+  let vert_length = Math.floor((graph_geometry.vertices.length - 1) / 2)
 
-  // Map input data range to relative size of grid
-  // TODO improve perf, combine into 1 loop. poss using underscore or d3
-  let y_position_range = [];
+  // loop over verticies and set their y value to data point
   for (var i = vert_length; i >= 0; i--) {
-    y_position_range[i] = mapRange([0, vert_length], [0, graph_height], i) - graph_y_offset;
+    let data_point = data[i][1];
+
+    // mapRange() scales the data to match the range of the graph
+    // subtract graph_y_offset to position geometry on graph
+    // TODO check perf. consider underscore or d3
+    let relative_position = mapRange([0, data_max], [0, graph_height], data_point) - graph_y_offset;
+    graph_geometry.vertices[i].y = relative_position;
   }
 
-  // iterate over the top verts and update their position
-  for (var z = vert_length; z >= 0; z--) {
-    console.log( y_position_range[z] );
-    ggeo.vertices[z].y = y_position_range[z];
-  }
 
   // material
   var material = new THREE.MeshBasicMaterial( {color: 0x000000, wireframe: true} );
 
   // add to scene
-  var plane = new THREE.Mesh( ggeo, material );
+  var plane = new THREE.Mesh( graph_geometry, material );
   plane.position.y = graph_y_offset;
 
   scene.add(plane);
@@ -154,6 +185,7 @@ function animate(){
   requestAnimationFrame( animate );
   controls.update();
   render();
+  stats.update();
 }
 
 
