@@ -39,7 +39,7 @@ function initialize(){
 
   // Graphs
   setupGraphGrids();
-  drawGraph();
+  drawGraph(data_brexit);
 }
 
 /**
@@ -142,25 +142,32 @@ function mapRange(from, to, s) {
   return to[0] + (s - from[0]) * (to[1] - to[0]) / (from[1] - from[0]);
 };
 
-var graph_geometry; // temp global for debugging
-function drawGraph(){
 
-  // temp
-  let data = data_brexit;
-  let data_max = 2;
+/**
+ *
+ * Draw a 3D Area Graph and to scene
+ * @param  {Array} data - array of data points in format [ [X,Y], [X,Y], ... ]
+ */
+function drawGraph(data){
 
+  // The maximum value of all graphed data sets.
+  // This scales the Y value accordingly.
+  let data_max = 2; // temp value taken from data_brexit.
+
+  // Dimensions and positioning of the Object3D
   let graph_width = grid_dimensions.width * 2,
       graph_height = grid_dimensions.height * 2,
       graph_y_offset = grid_dimensions.height;
 
-  graph_geometry = new THREE.PlaneGeometry( graph_width, graph_height, data.length / 2, 1 );
-
-  // Gets the # of verts in 1st half of plane
-  // 1/2 verts of plane are top, 1/2 verts of plane are bottom
-  let vert_length = Math.floor((graph_geometry.vertices.length - 1) / 2)
+  // Geometry. Important: widthSegments param == data.length so each vertex represents a point.
+  // subtracting 1 bc widthSegments creates triangles so we need 1 less segment than points
+  // (TODO confirm this is true. extra vertex was unaccounted for in prototype)
+  var graph_geometry = new THREE.PlaneGeometry( graph_width, graph_height, data.length - 1, 1 );
+  // temp global for debugging. TODO remove.
+  window.graph_geometry = graph_geometry;
 
   // loop over verticies and set their y value to data point
-  for (var i = vert_length; i >= 0; i--) {
+  for (var i = data.length - 1; i >= 0; i--) {
     let data_point = data[i][1];
 
     // mapRange() scales the data to match the range of the graph
@@ -170,9 +177,8 @@ function drawGraph(){
     graph_geometry.vertices[i].y = relative_position;
   }
 
-
   // material
-  var material = new THREE.MeshBasicMaterial( {color: 0x000000, wireframe: true} );
+  var material = new THREE.MeshBasicMaterial( {color: 0x2A88A5, side: THREE.DoubleSide} );
 
   // add to scene
   var plane = new THREE.Mesh( graph_geometry, material );
@@ -184,8 +190,8 @@ function drawGraph(){
 function animate(){
   requestAnimationFrame( animate );
   controls.update();
-  render();
   stats.update();
+  render();
 }
 
 
