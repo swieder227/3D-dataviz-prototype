@@ -1,4 +1,4 @@
-var container, scene, renderer, camera, controls, stats;
+var container, scene, renderer, camera, controls, stats, all_graphs = [];
 
 var grid_dimensions = {
   width: 50,
@@ -16,7 +16,7 @@ function initialize(){
   scene.background = new THREE.Color( 0xffffff );
 
   // Renderer
-  renderer = new THREE.WebGLRenderer();
+  renderer = new THREE.WebGLRenderer({antialias: true});
   renderer.setSize( window.innerWidth, window.innerHeight );
   container.appendChild( renderer.domElement );
 
@@ -24,9 +24,10 @@ function initialize(){
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
   controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-  camera.position.z = -28;
-  camera.position.x = 55;
-  camera.position.y = 55;
+  camera.position.x = -20.121462510502194;
+  camera.position.y = 18.555448009147472;
+  camera.position.z = -22.8506389194440;
+
 
   // Helper
   var axis_helper = new THREE.AxisHelper( 5 );
@@ -38,8 +39,12 @@ function initialize(){
   container.appendChild(stats.dom);
 
   // Graphs
-  setupGraphGrids();
-  drawGraph(data_brexit);
+  setupAllGrids();
+  all_graphs.push(createGraphPlane(data_brexit_gbp, [0, 6]));
+  all_graphs.push(createGraphPlane(data_brexit_uk, [0, 6], 0xFF00FF));
+  all_graphs.push(createGraphPlane(data_test, [0, 10]));
+  addCurrentGraphsToScene();
+
 }
 
 /**
@@ -47,7 +52,7 @@ function initialize(){
  * Sets up the 3D graph axis/grids
  * Creates multiple grids, adds to global scene
  */
-function setupGraphGrids(){
+function setupAllGrids(){
 
   let grid_object = new THREE.Object3D();
   grid_object.name = "graph-grid";
@@ -142,50 +147,85 @@ function mapRange(from, to, s) {
   return to[0] + (s - from[0]) * (to[1] - to[0]) / (from[1] - from[0]);
 };
 
-
 /**
  *
  * Draw a 3D Area Graph and to scene
  * @param  {Array} data - array of data points in format [ [X,Y], [X,Y], ... ]
+ * @param  {Array} min_max_range - two entries [0] = min = floor of graph, [1] = max = ceiling of graph
+ * @param  {Number} color - hex number to set color of graph material
+ * @return {THREE.Mesh} the THREE.js object ready for scene.add()
  */
-function drawGraph(data){
-
-  // The maximum value of all graphed data sets.
-  // This scales the Y value accordingly.
-  let data_max = 2; // temp value taken from data_brexit.
+function createGraphPlane(data = [], min_max_range = [0, 1], color = 0x2A88A5 ){
 
   // Dimensions and positioning of the Object3D
   let graph_width = grid_dimensions.width * 2,
       graph_height = grid_dimensions.height * 2,
       graph_y_offset = grid_dimensions.height;
 
-  // Geometry. Important: widthSegments param == data.length so each vertex represents a point.
-  // subtracting 1 bc widthSegments creates triangles so we need 1 less segment than points
-  // (TODO confirm this is true. extra vertex was unaccounted for in prototype)
+  // Geometry.
+  // widthSegments param == data.length - 1, so each vertex represents a point.
   var graph_geometry = new THREE.PlaneGeometry( graph_width, graph_height, data.length - 1, 1 );
+
   // temp global for debugging. TODO remove.
   window.graph_geometry = graph_geometry;
 
   // loop over verticies and set their y value to data point
-  for (var i = data.length - 1; i >= 0; i--) {
+  let data_length = data.length;
+  for (var i = 0; i < data_length; i++) {
+
+    // get data point
     let data_point = data[i][1];
 
-    // mapRange() scales the data to match the range of the graph
+    // calculate the position within graph space based on data_point
+    // mapRange() scales two ranges, data range <=> graph range
     // subtract graph_y_offset to position geometry on graph
     // TODO check perf. consider underscore or d3
-    let relative_position = mapRange([0, data_max], [0, graph_height], data_point) - graph_y_offset;
-    graph_geometry.vertices[i].y = relative_position;
+    let relative_position_y = mapRange([ min_max_range[0], min_max_range[1]], [0, graph_height], data_point) - graph_y_offset;
+
+    // verticies[0] is last point on x axis, verticies[data.length - 1] is the first
+    let vertex = graph_geometry.vertices[(data_length - 1) - i];
+
+    // set the y position of vertex
+    vertex.y = relative_position_y;
+
+    // save reference for value
+    vertex.value = data_point;
   }
 
   // material
-  var material = new THREE.MeshBasicMaterial( {color: 0x2A88A5, side: THREE.DoubleSide} );
+  var material = new THREE.MeshBasicMaterial( {color: color, side: THREE.DoubleSide} );
 
-  // add to scene
-  var plane = new THREE.Mesh( graph_geometry, material );
-  plane.position.y = graph_y_offset;
+  // bundle geo + material
+  var graph_obj = new THREE.Mesh( graph_geometry, material );
+  graph_obj.position.y = graph_y_offset;
 
-  scene.add(plane);
+  return graph_obj;
 }
+
+/**
+ *
+ * Iterates over `all_graphs`,
+ * positions them in z-space
+ * add them to the global `scene`
+ */
+function addCurrentGraphsToScene(){
+
+  // ammount of space between graphs
+  let between_offset = 5;
+
+  // iterate over all graphs
+  for (var i = 0; i < all_graphs.length; i++) {
+
+    // set position
+    let position_zed = -all_graphs.length + (between_offset * i);
+    all_graphs[i].position.z = position_zed;
+
+    // add to scene
+    scene.add(all_graphs[i]);
+
+  }
+}
+
 
 function animate(){
   requestAnimationFrame( animate );
