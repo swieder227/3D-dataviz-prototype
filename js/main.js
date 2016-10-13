@@ -33,12 +33,12 @@ function initialize(){
   camera = new THREE.OrthographicCamera( -aspect*view_size / 2, aspect*view_size / 2, view_size / 2, -view_size / 2, -1000, 1000 );
   controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-  camera.position.z = -80;;
+  camera.position.z = -1;
 
-  // Helper
+  /*// Helper
   var axis_helper = new THREE.AxisHelper( 5 );
   axis_helper.position.z = 40;
-  scene.add(axis_helper);
+  scene.add(axis_helper);*/
 
   // Stats
   stats = new Stats();
@@ -64,30 +64,33 @@ function setupAllGrids(){
   let grid_object = new THREE.Object3D();
   grid_object.name = "graph-grid";
 
+  // Back
   let grid_xy = createGrid({
     width: grid_dimensions.height,
     height: grid_dimensions.width,
-    linesHeight: 10,
-    linesWidth: 10,
+    linesHeight: 5,
+    linesWidth: 5,
     color: 0xDEDEE0, /*0x0000FF*/
   });
   grid_xy.position.z = grid_dimensions.depth;
 
+  // Floor
   let grid_xz = createGrid({
     width: grid_dimensions.depth,
     height: grid_dimensions.width,
     linesHeight: 10,
-    linesWidth: 10,
+    linesWidth: 1,
     color: 0xDEDEE0, /*0xFF0000*/
   });
   grid_xz.rotateX(Math.PI / 2);
   grid_xz.position.y = -1 * grid_dimensions.height;
 
+  // Side
   let grid_yz = createGrid({
     width: grid_dimensions.height,
     height: grid_dimensions.depth,
-    linesHeight: 10,
-    linesWidth: 10,
+    linesHeight: 1,
+    linesWidth: 5,
     color: 0xDEDEE0, /*0x00FF00*/
   });
   grid_yz.position.x = -1 * grid_dimensions.width;
@@ -116,7 +119,8 @@ function createGrid(options){
 
   let material = new THREE.LineBasicMaterial({
     color: config.color,
-    opacity: 0.2
+    opacity: 0.2,
+    linewidth: 2
   });
 
   let grid_geo = new THREE.Geometry(),
