@@ -1,4 +1,4 @@
-var container, scene, renderer, camera, controls, stats, all_graphs = [];
+var container, scene, renderer, camera, controls, stats, grid_object, all_graphs = [];
 
 const grid_dimensions = {
   width: 50,
@@ -26,16 +26,18 @@ function initialize(){
   container.appendChild( renderer.domElement );
 
   // Camera
-  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+  // size is set as the graph dimensions w/ padding
+  let view_size = Math.max(grid_dimensions.width * 1.5, grid_dimensions.height * 1.5);
+  let aspect = window.innerWidth / window.innerHeight;
+
+  camera = new THREE.OrthographicCamera( -aspect*view_size / 2, aspect*view_size / 2, view_size / 2, -view_size / 2, -1000, 1000 );
   controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-  camera.position.x = 0.07901608973999509;
-  camera.position.y = 2.4232143236837693;
-  camera.position.z = -33.78604380325104;
+  camera.position.z = -80;;
 
   // Helper
   var axis_helper = new THREE.AxisHelper( 5 );
-  axis_helper.position.z = -40;
+  axis_helper.position.z = 40;
   scene.add(axis_helper);
 
   // Stats
@@ -43,7 +45,7 @@ function initialize(){
   container.appendChild(stats.dom);
 
   // Graphs
-  setupAllGrids();
+  grid_object = setupAllGrids();
   all_graphs.push(createGraphPlane(data_brexit_usd, [0, 90], COLOR_BLUE_DARK)); // range 0-1
   all_graphs.push(createGraphPlane(data_brexit_gbp, [0, 90], COLOR_BLUE_LIGHT)); // range 1-3
   all_graphs.push(createGraphPlane(data_brexit_uk, [0, 90], COLOR_GREEN_DARK)); // range 0-6
@@ -55,6 +57,7 @@ function initialize(){
 /**
  * Sets up the 3D graph axis/grids
  * Creates multiple grids, adds to global scene
+ * @return {THREE.Object3D} the parent THREE.js object
  */
 function setupAllGrids(){
 
@@ -93,6 +96,8 @@ function setupAllGrids(){
   grid_object.add( grid_xy ).add( grid_xz ).add( grid_yz );
   grid_object.position.y = grid_dimensions.height;
   scene.add( grid_object );
+
+  return grid_object;
 }
 
 /**
@@ -114,8 +119,7 @@ function createGrid(options){
     opacity: 0.2
   });
 
-  let grid_object = new THREE.Object3D(),
-      grid_geo = new THREE.Geometry(),
+  let grid_geo = new THREE.Geometry(),
       stepw = 2 * config.width / config.linesWidth,
       steph = 2 * config.height / config.linesHeight;
 
@@ -131,8 +135,7 @@ function createGrid(options){
       grid_geo.vertices.push( new THREE.Vector3( i, config.width, 0 ) );
   }
 
-  var line = new THREE.LineSegments(grid_geo, material, THREE.LinePieces);
-  grid_object.add(line);
+  var grid_object = new THREE.LineSegments(grid_geo, material, THREE.LinePieces);
   grid_object.name = "single-grid"
 
   return grid_object;
