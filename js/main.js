@@ -1,10 +1,15 @@
 var container, scene, renderer, camera, controls, stats, all_graphs = [];
 
-var grid_dimensions = {
+const grid_dimensions = {
   width: 50,
   height: 15,
   depth: 20
 }
+
+const COLOR_BLUE_DARK = 0x5E648C;
+const COLOR_BLUE_LIGHT = 0x98B9DA;
+const COLOR_GREEN_DARK = 0x7EA992;
+const COLOR_GREEN_LIGHT = 0xA4CBCF;
 
 function initialize(){
 
@@ -24,14 +29,13 @@ function initialize(){
   camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
   controls = new THREE.OrbitControls( camera, renderer.domElement );
 
-  camera.position.x = -20.121462510502194;
-  camera.position.y = 18.555448009147472;
-  camera.position.z = -22.8506389194440;
-
+  camera.position.x = 0.07901608973999509;
+  camera.position.y = 2.4232143236837693;
+  camera.position.z = -33.78604380325104;
 
   // Helper
   var axis_helper = new THREE.AxisHelper( 5 );
-  axis_helper.position.z = -30;
+  axis_helper.position.z = -40;
   scene.add(axis_helper);
 
   // Stats
@@ -40,15 +44,15 @@ function initialize(){
 
   // Graphs
   setupAllGrids();
-  all_graphs.push(createGraphPlane(data_brexit_gbp, [0, 6]));
-  all_graphs.push(createGraphPlane(data_brexit_uk, [0, 6], 0xFF00FF));
-  all_graphs.push(createGraphPlane(data_test, [0, 10]));
+  all_graphs.push(createGraphPlane(data_brexit_usd, [0, 90], COLOR_BLUE_DARK)); // range 0-1
+  all_graphs.push(createGraphPlane(data_brexit_gbp, [0, 90], COLOR_BLUE_LIGHT)); // range 1-3
+  all_graphs.push(createGraphPlane(data_brexit_uk, [0, 90], COLOR_GREEN_DARK)); // range 0-6
+  all_graphs.push(createGraphPlane(data_brexit_vix, [0, 90], COLOR_GREEN_LIGHT)); // range 11-60
   addCurrentGraphsToScene();
 
 }
 
 /**
- *
  * Sets up the 3D graph axis/grids
  * Creates multiple grids, adds to global scene
  */
@@ -62,7 +66,7 @@ function setupAllGrids(){
     height: grid_dimensions.width,
     linesHeight: 10,
     linesWidth: 10,
-    color: 0x0000FF
+    color: 0xDEDEE0, /*0x0000FF*/
   });
   grid_xy.position.z = grid_dimensions.depth;
 
@@ -71,7 +75,7 @@ function setupAllGrids(){
     height: grid_dimensions.width,
     linesHeight: 10,
     linesWidth: 10,
-    color: 0xFF0000
+    color: 0xDEDEE0, /*0xFF0000*/
   });
   grid_xz.rotateX(Math.PI / 2);
   grid_xz.position.y = -1 * grid_dimensions.height;
@@ -81,7 +85,7 @@ function setupAllGrids(){
     height: grid_dimensions.depth,
     linesHeight: 10,
     linesWidth: 10,
-    color: 0x00FF00
+    color: 0xDEDEE0, /*0x00FF00*/
   });
   grid_yz.position.x = -1 * grid_dimensions.width;
   grid_yz.rotateY(Math.PI / 2);
@@ -92,7 +96,6 @@ function setupAllGrids(){
 }
 
 /**
- *
  * Create a rectangular grid in 3D space
  * @param  {Object} options - config to describe the grid
  * @return {THREE.Object3D} the THREE.js object
@@ -136,7 +139,6 @@ function createGrid(options){
 }
 
 /**
- *
  * Map a given value from one range to the same value in another range
  * @param  {Array} from - current range of values [0,100] => 0, 1, 2... 100
  * @param  {Array} to - desired range of values [0,1] => 0, 0.1, 0.2 ... 1
@@ -148,14 +150,13 @@ function mapRange(from, to, s) {
 };
 
 /**
- *
- * Draw a 3D Area Graph and to scene
+ * Draw a 3D Area Graph and add to scene
  * @param  {Array} data - array of data points in format [ [X,Y], [X,Y], ... ]
  * @param  {Array} min_max_range - two entries [0] = min = floor of graph, [1] = max = ceiling of graph
  * @param  {Number} color - hex number to set color of graph material
  * @return {THREE.Mesh} the THREE.js object ready for scene.add()
  */
-function createGraphPlane(data = [], min_max_range = [0, 1], color = 0x2A88A5 ){
+function createGraphPlane(data = [], min_max_range = [0, 1], color = COLOR_BLUE_DARK ){
 
   // Dimensions and positioning of the Object3D
   let graph_width = grid_dimensions.width * 2,
@@ -165,9 +166,6 @@ function createGraphPlane(data = [], min_max_range = [0, 1], color = 0x2A88A5 ){
   // Geometry.
   // widthSegments param == data.length - 1, so each vertex represents a point.
   var graph_geometry = new THREE.PlaneGeometry( graph_width, graph_height, data.length - 1, 1 );
-
-  // temp global for debugging. TODO remove.
-  window.graph_geometry = graph_geometry;
 
   // loop over verticies and set their y value to data point
   let data_length = data.length;
@@ -203,7 +201,6 @@ function createGraphPlane(data = [], min_max_range = [0, 1], color = 0x2A88A5 ){
 }
 
 /**
- *
  * Iterates over `all_graphs`,
  * positions them in z-space
  * add them to the global `scene`
@@ -211,7 +208,7 @@ function createGraphPlane(data = [], min_max_range = [0, 1], color = 0x2A88A5 ){
 function addCurrentGraphsToScene(){
 
   // ammount of space between graphs
-  let between_offset = 5;
+  let between_offset = 3;
 
   // iterate over all graphs
   for (var i = 0; i < all_graphs.length; i++) {
