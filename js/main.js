@@ -1,16 +1,36 @@
 var container, scene, renderer, camera, controls, stats, grid_object, all_graphs = [];
 
+/**
+ * The relative size of the grid/graph in 3D world dimensions
+ * @type {Object}
+ */
 const grid_dimensions = {
   width: 50,
   height: 15,
   depth: 20
 }
 
-const COLOR_BLUE_DARK = 0x5E648C;
-const COLOR_BLUE_LIGHT = 0x98B9DA;
-const COLOR_GREEN_DARK = 0x7EA992;
-const COLOR_GREEN_LIGHT = 0xA4CBCF;
+/**
+ * All colors to iterate over when drawing graph planes
+ * @type {Array} of hex colors
+ */
+const GRAPH_COLORS = [0x5E648C, 0x98B9DA, 0x7EA992, 0xA4CBCF];
 
+/**
+ * All data to graph a PIMCO story
+ * @type {Array} An array of data sets
+ * @type {Array} data[x][0] - array of data values with [date,value]
+ * @type {Array} data[x][1] - two value array with min/max values for createGraphPlane()
+ */
+const DATA_BREXIT = [[data_brexit_usd, [0,90]], [data_brexit_gbp, [0,90]], [data_brexit_uk, [0,90]], [data_brexit_vix, [0,90]]];
+const DATA_HOUSING = [[data_housing_usfed, [0,500]], [data_housing_spcs, [0,500]], [data_housing_sp500, [0,500]]];
+const DATA_MONETARY = [[data_monetary_10yr, [0,100]], [data_monetary_usfedfunds, [0,100]], [data_monetary_unemploy, [0,100]], [data_monetary_fedreserve, [0,4750000]]];
+const DATA_OIL = [[data_oil, [0,150]]]
+
+
+/**
+ * Init all ThreeJS components
+ */
 function initialize(){
 
   // Container
@@ -46,12 +66,12 @@ function initialize(){
 
   // Graphs
   grid_object = setupAllGrids();
-  all_graphs.push(createGraphPlane(data_brexit_usd, [0, 90], COLOR_BLUE_DARK)); // range 0-1
-  all_graphs.push(createGraphPlane(data_brexit_gbp, [0, 90], COLOR_BLUE_LIGHT)); // range 1-3
-  all_graphs.push(createGraphPlane(data_brexit_uk, [0, 90], COLOR_GREEN_DARK)); // range 0-6
-  all_graphs.push(createGraphPlane(data_brexit_vix, [0, 90], COLOR_GREEN_LIGHT)); // range 11-60
-  addCurrentGraphsToScene();
 
+  // Data
+  setupGraphsForStory(DATA_BREXIT);
+  // setupGraphsForStory(DATA_HOUSING);
+  // setupGraphsForStory(DATA_MONETARY);
+  // setupGraphsForStory(DATA_OIL);
 }
 
 /**
@@ -230,14 +250,38 @@ function addCurrentGraphsToScene(){
   }
 }
 
+/**
+ * Remove all 3D graphs from the scene,
+ * Reset `all_graphs`
+ */
+function removeCurrentGraphsFromScene(){
+  for (var i = all_graphs.length - 1; i >= 0; i--) {
+    scene.remove(all_graphs[i]);
+  }
+  all_graphs = [];
+}
 
+/**
+ * Reset `scene` and draw graphs for a story
+ * @param {Array} dataset - constant array of static data
+ * @param {Array} data[x][0] - array of data values with [date,value]
+ * @param {Array} data[x][1] - two value array with min/max values for createGraphPlane()
+ */
+function setupGraphsForStory(dataset){
+  removeCurrentGraphsFromScene();
+  dataset.forEach(function(data, index){
+      all_graphs.push(createGraphPlane(data[0], data[1], GRAPH_COLORS[index]));
+  });
+  addCurrentGraphsToScene();
+}
+
+// animation loop
 function animate(){
   requestAnimationFrame( animate );
   controls.update();
   stats.update();
   render();
 }
-
 
 // render loop to re-draw frame 60 times per second
 function render() {

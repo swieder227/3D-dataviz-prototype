@@ -5,19 +5,34 @@
 		<title>demo Three.js app</title>
 		<style>
 			body { margin: 0; overflow: hidden; }
-      #container, #ui { position: absolute; }
+      #container { position: absolute; }
+			#ui { position: absolute; bottom: 0; left: 0;}
 			canvas { width: 100%; height: 100% }
 		</style>
 	</head>
 	<body>
     <div id="container"></div>
-    <div id="ui"></div>
+    <div id="ui">
+    	<button onclick="setupGraphsForStory(DATA_BREXIT);">Brexit</button>
+    	<button onclick="setupGraphsForStory(DATA_HOUSING);">Housing</button>
+    	<button onclick="setupGraphsForStory(DATA_MONETARY);">Monetary</button>
+    	<button onclick="setupGraphsForStory(DATA_OIL);">Oil</button>
+    </div>
 
-		<script src="js/data/Brexit-GBPUSD-ARRAY.js"></script>
-		<script src="js/data/Brexit-UK10YearYield-ARRAY.js"></script>
-		<script src="js/data/Brexit-USDGBP-ARRAY.js"></script>
-		<script src="js/data/Brexit-VIX-ARRAY.js"></script>
-		<script src="js/data/test.js"></script>
+		<script src="js/data/brexit/Brexit-GBPUSD-ARRAY.js"></script>
+		<script src="js/data/brexit/Brexit-UK10YearYield-ARRAY.js"></script>
+		<script src="js/data/brexit/Brexit-USDGBP-ARRAY.js"></script>
+		<script src="js/data/brexit/Brexit-VIX-ARRAY.js"></script>
+		<script src="js/data/housing/Housing-Crisis-SP500Financials.js"></script>
+		<script src="js/data/housing/Housing-Crisis-SPCase-Shiller.js"></script>
+		<script src="js/data/housing/Housing-Crisis-USFederalFunds.js"></script>
+		<script src="js/data/monetary/MonetaryPolicy-10YearYield.js"></script>
+		<script src="js/data/monetary/MonetaryPolicy-FederalReserve.js"></script>
+		<script src="js/data/monetary/MonetaryPolicy-USFederalFunds.js"></script>
+		<script src="js/data/monetary/MonetaryPolicy-USUnemployment.js"></script>
+		<script src="js/data/oil/Oil.js"></script>
+
+
 
 		<script src="js/three.js"></script>
 		<script src="js/stats.min.js"></script>
