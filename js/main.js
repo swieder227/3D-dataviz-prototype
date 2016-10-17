@@ -22,11 +22,18 @@ const GRAPH_COLORS = [0x5E648C, 0x98B9DA, 0x7EA992, 0xA4CBCF];
  * @type {Array} data[x][0] - array of data values with [date,value]
  * @type {Array} data[x][1] - two value array with min/max values for createGraphPlane()
  */
-const DATA_BREXIT = [[data_brexit_usd, [0,90]], [data_brexit_gbp, [0,90]], [data_brexit_uk, [0,90]], [data_brexit_vix, [0,90]]];
-const DATA_HOUSING = [[data_housing_usfed, [0,500]], [data_housing_spcs, [0,500]], [data_housing_sp500, [0,500]]];
-const DATA_MONETARY = [[data_monetary_10yr, [0,100]], [data_monetary_usfedfunds, [0,100]], [data_monetary_unemploy, [0,100]], [data_monetary_fedreserve, [0,4750000]]];
-const DATA_OIL = [[data_oil, [0,150]]]
+const DATA_BREXIT = [ [data_brexit_usd, [0,90]], [data_brexit_gbp, [0,90]], [data_brexit_uk, [0,90]], [data_brexit_vix, [0,90]] ];
+const DATA_HOUSING = [ [data_housing_usfed, [0,500]], [data_housing_spcs, [0,500]], [data_housing_sp500, [0,500]] ];
+const DATA_MONETARY = [ [data_monetary_usfedfunds, [0,100]], [data_monetary_10yr, [0,100]], [data_monetary_unemploy, [0,100]], [data_monetary_fedreserve, [0,4750000]] ];
+const DATA_CHINA = [ [data_china_gdp, [0, 100]], [data_china_ctrb, [0, 100]] ];
+const DATA_OIL = [ [data_oil, [0,150]] ];
 
+/**
+ * Default camera positions
+ * @type {THREE.Vector3} { x, y, z }
+ */
+const POSITION_2D = new THREE.Vector3(0, 0, -1);
+const POSITION_3D = new THREE.Vector3(1, 0.75, -1);
 
 /**
  * Init all ThreeJS components
@@ -39,6 +46,8 @@ function initialize(){
   // Scene
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xffffff );
+  // centers vertically
+  scene.position.y = -grid_dimensions.height / 2;
 
   // Renderer
   renderer = new THREE.WebGLRenderer({antialias: true});
@@ -52,8 +61,11 @@ function initialize(){
 
   camera = new THREE.OrthographicCamera( -aspect*view_size / 2, aspect*view_size / 2, view_size / 2, -view_size / 2, -1000, 1000 );
   controls = new THREE.OrbitControls( camera, renderer.domElement );
-
-  camera.position.z = -1;
+  //zoom
+  camera.zoom = 0.75;
+  camera.updateProjectionMatrix();
+  // position
+  setCameraPosition(POSITION_2D, 1);
 
   /*// Helper
   var axis_helper = new THREE.AxisHelper( 5 );
@@ -72,6 +84,18 @@ function initialize(){
   // setupGraphsForStory(DATA_HOUSING);
   // setupGraphsForStory(DATA_MONETARY);
   // setupGraphsForStory(DATA_OIL);
+  // setupGraphsForStory(DATA_CHINA);
+}
+
+/**
+ * Animates camera position to provided coordinates
+ * @param {THREE.Vector3} position_vector x/y/z coordinates
+ */
+function setCameraPosition(position_vector){
+  let tween = new TWEEN.Tween(camera.position)
+      .to({ x: position_vector.x, y: position_vector.y, z: position_vector.z }, 1000)
+      .easing(TWEEN.Easing.Cubic.Out)
+      .start();
 }
 
 /**
@@ -88,7 +112,7 @@ function setupAllGrids(){
   let grid_xy = createGrid({
     width: grid_dimensions.height,
     height: grid_dimensions.width,
-    linesHeight: 5,
+    linesHeight: 10,
     linesWidth: 5,
     color: 0xDEDEE0, /*0x0000FF*/
   });
@@ -280,6 +304,7 @@ function animate(){
   requestAnimationFrame( animate );
   controls.update();
   stats.update();
+  TWEEN.update();
   render();
 }
 

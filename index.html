@@ -6,18 +6,24 @@
 		<style>
 			body { margin: 0; overflow: hidden; }
       #container { position: absolute; }
-			#ui { position: absolute; bottom: 0; left: 0;}
+			#ui-left { position: absolute; bottom: 0; left: 0;}
+			#ui-right { position: absolute; bottom: 0; right: 0;}
 			canvas { width: 100%; height: 100% }
 		</style>
 	</head>
 	<body>
     <div id="container"></div>
-    <div id="ui">
+    <div id="ui-left">
     	<button onclick="setupGraphsForStory(DATA_BREXIT);">Brexit</button>
     	<button onclick="setupGraphsForStory(DATA_HOUSING);">Housing</button>
     	<button onclick="setupGraphsForStory(DATA_MONETARY);">Monetary</button>
+			<button onclick="setupGraphsForStory(DATA_CHINA);">China</button>
     	<button onclick="setupGraphsForStory(DATA_OIL);">Oil</button>
     </div>
+		<div id="ui-right">
+			<button onclick="setCameraPosition(POSITION_2D);">2D Camera</button>
+			<button onclick="setCameraPosition(POSITION_3D);">3D Camera</button>
+		</div>
 
 		<script src="js/data/brexit/Brexit-GBPUSD-ARRAY.js"></script>
 		<script src="js/data/brexit/Brexit-UK10YearYield-ARRAY.js"></script>
@@ -31,12 +37,15 @@
 		<script src="js/data/monetary/MonetaryPolicy-USFederalFunds.js"></script>
 		<script src="js/data/monetary/MonetaryPolicy-USUnemployment.js"></script>
 		<script src="js/data/oil/Oil.js"></script>
+		<script src="js/data/china/ChinaHousingData-CTRB.js"></script>
+		<script src="js/data/china/ChinaHousingData-GDP.js"></script>
 
 
 
 		<script src="js/three.js"></script>
 		<script src="js/stats.min.js"></script>
     <script src="js/OrbitControls.js"></script>
+		<script src="js/Tween.js"></script>
 		<script src="js/main.js"></script>
 	</body>
 </html>
