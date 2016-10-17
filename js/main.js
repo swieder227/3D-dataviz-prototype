@@ -58,14 +58,18 @@ function initialize(){
   // size is set as the graph dimensions w/ padding
   let view_size = Math.max(grid_dimensions.width * 1.5, grid_dimensions.height * 1.5);
   let aspect = window.innerWidth / window.innerHeight;
-
   camera = new THREE.OrthographicCamera( -aspect*view_size / 2, aspect*view_size / 2, view_size / 2, -view_size / 2, -1000, 1000 );
-  controls = new THREE.OrbitControls( camera, renderer.domElement );
+
   //zoom
   camera.zoom = 0.75;
   camera.updateProjectionMatrix();
   // position
-  setCameraPosition(POSITION_2D, 1);
+  camera.position.x = POSITION_2D.x;
+  camera.position.y = POSITION_2D.y;
+  camera.position.z = POSITION_2D.z;
+
+  // Controls
+  controls = new THREE.OrbitControls( camera, renderer.domElement );
 
   /*// Helper
   var axis_helper = new THREE.AxisHelper( 5 );
@@ -89,12 +93,23 @@ function initialize(){
 
 /**
  * Animates camera position to provided coordinates
- * @param {THREE.Vector3} position_vector x/y/z coordinates
+ * @param {THREE.Vector3} position_vector - x/y/z coordinates
+ * @param {Number} anim_duration - length of animation in ms
  */
-function setCameraPosition(position_vector){
+function animateCameraPosition(position_vector, anim_duration = 1000){
+
+  let ease_curve = TWEEN.Easing.Cubic.Out;
+
+  // tween camera position
   let tween = new TWEEN.Tween(camera.position)
-      .to({ x: position_vector.x, y: position_vector.y, z: position_vector.z }, 1000)
-      .easing(TWEEN.Easing.Cubic.Out)
+      .to({ x: position_vector.x, y: position_vector.y, z: position_vector.z }, anim_duration)
+      .easing(ease_curve)
+      .start();
+
+  // if we pan the controls, the center is off, and must be reset.
+  let tween2 = new TWEEN.Tween(controls.target)
+      .to({ x: 0, y: 0, z: 0 }, anim_duration)
+      .easing(ease_curve)
       .start();
 }
 
