@@ -4,7 +4,7 @@ var container, scene, renderer, camera, controls, stats, grid_object, all_graphs
  * The relative size of the grid/graph in 3D world dimensions
  * @type {Object}
  */
-const grid_dimensions = {
+const GRID_DIMENSIONS = {
   width: 50,
   height: 15,
   depth: 20
@@ -47,7 +47,7 @@ function initialize(){
   scene = new THREE.Scene();
   scene.background = new THREE.Color( 0xffffff );
   // centers vertically
-  scene.position.y = -grid_dimensions.height / 2;
+  scene.position.y = -GRID_DIMENSIONS.height / 2;
 
   // Renderer
   renderer = new THREE.WebGLRenderer({antialias: true});
@@ -56,7 +56,7 @@ function initialize(){
 
   // Camera
   // size is set as the graph dimensions w/ padding
-  let view_size = Math.max(grid_dimensions.width * 1.5, grid_dimensions.height * 1.5);
+  let view_size = Math.max(GRID_DIMENSIONS.width * 1.5, GRID_DIMENSIONS.height * 1.5);
   let aspect = window.innerWidth / window.innerHeight;
   camera = new THREE.OrthographicCamera( -aspect*view_size / 2, aspect*view_size / 2, view_size / 2, -view_size / 2, -1000, 1000 );
 
@@ -85,10 +85,10 @@ function initialize(){
 
   // Data
   setupGraphsForStory(DATA_BREXIT);
-  // setupGraphsForStory(DATA_HOUSING);
-  // setupGraphsForStory(DATA_MONETARY);
-  // setupGraphsForStory(DATA_OIL);
-  // setupGraphsForStory(DATA_CHINA);
+
+  // Labels
+  setupXAxisLabels(["Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3"]);
+  // createYAxisLabels(["2001", "2002", "2003", "2004", "2005", "2006"]);
 }
 
 /**
@@ -125,38 +125,38 @@ function setupAllGrids(){
 
   // Back
   let grid_xy = createGrid({
-    width: grid_dimensions.height,
-    height: grid_dimensions.width,
+    width: GRID_DIMENSIONS.height,
+    height: GRID_DIMENSIONS.width,
     linesHeight: 10,
     linesWidth: 5,
     color: 0xDEDEE0, /*0x0000FF*/
   });
-  grid_xy.position.z = grid_dimensions.depth;
+  grid_xy.position.z = GRID_DIMENSIONS.depth;
 
   // Floor
   let grid_xz = createGrid({
-    width: grid_dimensions.depth,
-    height: grid_dimensions.width,
+    width: GRID_DIMENSIONS.depth,
+    height: GRID_DIMENSIONS.width,
     linesHeight: 10,
     linesWidth: 1,
     color: 0xDEDEE0, /*0xFF0000*/
   });
   grid_xz.rotateX(Math.PI / 2);
-  grid_xz.position.y = -1 * grid_dimensions.height;
+  grid_xz.position.y = -1 * GRID_DIMENSIONS.height;
 
   // Side
   let grid_yz = createGrid({
-    width: grid_dimensions.height,
-    height: grid_dimensions.depth,
+    width: GRID_DIMENSIONS.height,
+    height: GRID_DIMENSIONS.depth,
     linesHeight: 1,
     linesWidth: 5,
     color: 0xDEDEE0, /*0x00FF00*/
   });
-  grid_yz.position.x = -1 * grid_dimensions.width;
+  grid_yz.position.x = -1 * GRID_DIMENSIONS.width;
   grid_yz.rotateY(Math.PI / 2);
 
   grid_object.add( grid_xy ).add( grid_xz ).add( grid_yz );
-  grid_object.position.y = grid_dimensions.height;
+  grid_object.position.y = GRID_DIMENSIONS.height;
   scene.add( grid_object );
 
   return grid_object;
@@ -225,9 +225,9 @@ function mapRange(from, to, s) {
 function createGraphPlane(data = [], min_max_range = [0, 1], color = COLOR_BLUE_DARK ){
 
   // Dimensions and positioning of the Object3D
-  let graph_width = grid_dimensions.width * 2,
-      graph_height = grid_dimensions.height * 2,
-      graph_y_offset = grid_dimensions.height;
+  let graph_width = GRID_DIMENSIONS.width * 2,
+      graph_height = GRID_DIMENSIONS.height * 2,
+      graph_y_offset = GRID_DIMENSIONS.height;
 
   // Geometry.
   // widthSegments param == data.length - 1, so each vertex represents a point.
@@ -312,6 +312,87 @@ function setupGraphsForStory(dataset){
       all_graphs.push(createGraphPlane(data[0], data[1], GRAPH_COLORS[index]));
   });
   addCurrentGraphsToScene();
+}
+
+/**
+ * Creates a text label sprite
+ * Sprites always face the camera regardless of orientation
+ * @param  {String} message - the text content of the label
+ * @param  {Object} opts - limited config options for fontface, fontsize, etc.
+ * @return {THREE.Sprite} - 3D Object ready to be added to a scene
+ */
+function createTextSprite(message, opts){
+  let parameters = opts || {};
+  let fontface = parameters.fontface || 'Arial';
+  let fontsize = parameters.fontsize || 18;
+
+  // multiplier. We'll multiple up the fontsize, then divide down the object.scale
+  // Higher # == crisper text rendering. depreciating return for noticible difference ~3.
+  let scale_multiplier = 3;
+
+  // scale up font-size
+  fontsize = fontsize * scale_multiplier;
+
+  // create a canvas to render to onto
+  let canvas = document.createElement('canvas');
+  let context = canvas.getContext('2d');
+
+  // get size of text
+  let metrics = context.measureText(message);
+  let size = metrics.width * fontsize / 8;
+
+  // textures render best as squares
+  canvas.width = size;
+  canvas.height = size;
+
+  // style
+  context.font = fontsize + "px " + fontface;
+  context.fillStyle = 'rgba(0, 0, 0, 1.0)';
+  // add text. vertically and horizontall center
+  context.textAlign = "center";
+  context.fillText(message, size / 2, size / 2);
+
+  // canvas contents will be used for a texture
+  let texture = new THREE.Texture(canvas)
+  texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+
+  // sprite object
+  let spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+  let sprite = new THREE.Sprite(spriteMaterial);
+
+  // scale down the sprite
+  sprite.scale.set(size / (scale_multiplier * 10), size / (scale_multiplier * 10), 1);
+
+  return sprite;
+}
+
+/**
+ * Evenly distribute labels along the x axis
+ * Adding them to the global `scene`
+ * @param  {Array} array of strings. One for each label.
+ */
+function setupXAxisLabels(labels){
+
+  let starting_point = GRID_DIMENSIONS.width;
+  let offset = GRID_DIMENSIONS.width * 2 / (labels.length - 1);
+
+  labels.forEach((label_text, index) => {
+    // create sprite label
+    let sprite = createTextSprite(label_text);
+
+    // position on along axis
+    sprite.position.x = starting_point - (offset * index);
+
+    // position on z axis
+    sprite.position.z = -GRID_DIMENSIONS.depth - 2
+
+    // y space
+    sprite.position.y = -2;
+
+    // add to scene
+    scene.add(sprite);
+  });
 }
 
 // animation loop
