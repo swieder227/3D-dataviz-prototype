@@ -26,7 +26,7 @@ const DATA_BREXIT = [ [data_brexit_usd, [0,90]], [data_brexit_gbp, [0,90]], [dat
 const DATA_HOUSING = [ [data_housing_usfed, [0,500]], [data_housing_spcs, [0,500]], [data_housing_sp500, [0,500]] ];
 const DATA_MONETARY = [ [data_monetary_usfedfunds, [0,100]], [data_monetary_10yr, [0,100]], [data_monetary_unemploy, [0,100]], [data_monetary_fedreserve, [0,4750000]] ];
 const DATA_CHINA = [ [data_china_gdp, [0, 100]], [data_china_ctrb, [0, 100]] ];
-const DATA_OIL = [ [data_oil, [0,150]] ];
+const DATA_OIL = [ [data_oil_opec, [0,45000]], [data_oil_non_opec, [0,45000]] ];
 
 /**
  * Default camera positions
