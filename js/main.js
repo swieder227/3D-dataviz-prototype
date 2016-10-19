@@ -22,18 +22,18 @@ const GRAPH_COLORS = [0x5E648C, 0x98B9DA, 0x7EA992, 0xA4CBCF];
  * @type {Array} data[x][0] - array of data values with [date,value]
  * @type {Array} data[x][1] - two value array with min/max values for createGraphPlane()
  */
-const DATA_BREXIT = [ [data_brexit_usd, [0,90]], [data_brexit_gbp, [0,90]], [data_brexit_uk, [0,90]], [data_brexit_vix, [0,90]] ];
-const DATA_HOUSING = [ [data_housing_usfed, [0,500]], [data_housing_spcs, [0,500]], [data_housing_sp500, [0,500]] ];
-const DATA_MONETARY = [ [data_monetary_usfedfunds, [0,100]], [data_monetary_10yr, [0,100]], [data_monetary_unemploy, [0,100]], [data_monetary_fedreserve, [0,4750000]] ];
+const DATA_BREXIT = [ [data_brexit_usd, [0,45]], [data_brexit_gbp, [0,45]], [data_brexit_uk, [0,45]], [data_brexit_vix, [0,90]] ];
+const DATA_HOUSING = [ [data_housing_usfed, [-1,550]], [data_housing_spcs, [0,550]], [data_housing_sp500, [0,550]] ];
+const DATA_MONETARY = [ [data_monetary_usfedfunds, [-1,47.5]], [data_monetary_10yr, [0,47.5]], [data_monetary_unemploy, [0,47.5]], [data_monetary_fedreserve, [0,4750000]] ];
 const DATA_CHINA = [ [data_china_gdp, [0, 100]], [data_china_ctrb, [0, 100]] ];
-const DATA_OIL = [ [data_oil_opec, [0,45000]], [data_oil_non_opec, [0,45000]] ];
+const DATA_OIL = [ [data_oil_opec, [0,50000]], [data_oil_non_opec, [0,50000]] ];
 
 /**
  * Default camera positions
  * @type {THREE.Vector3} { x, y, z }
  */
 const POSITION_2D = new THREE.Vector3(0, 0, -1);
-const POSITION_3D = new THREE.Vector3(1, 0.75, -1);
+const POSITION_3D = new THREE.Vector3(0.8, 0.55, -1);
 
 /**
  * Init all ThreeJS components
@@ -61,12 +61,12 @@ function initialize(){
   camera = new THREE.OrthographicCamera( -aspect*view_size / 2, aspect*view_size / 2, view_size / 2, -view_size / 2, -1000, 1000 );
 
   //zoom
-  camera.zoom = 0.75;
+  camera.zoom = 0.85;
   camera.updateProjectionMatrix();
   // position
-  camera.position.x = POSITION_2D.x;
-  camera.position.y = POSITION_2D.y;
-  camera.position.z = POSITION_2D.z;
+  camera.position.x = POSITION_3D.x;
+  camera.position.y = POSITION_3D.y;
+  camera.position.z = POSITION_3D.z;
 
   // Controls
   controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -87,8 +87,8 @@ function initialize(){
   setupGraphsForStory(DATA_BREXIT);
 
   // Labels
-  setupXAxisLabels(["Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3"]);
-  // createYAxisLabels(["2001", "2002", "2003", "2004", "2005", "2006"]);
+  // setupXAxisLabels(["Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3"]);
+  // setupXAxisLabels(["2001", "2002", "2003", "2004", "2005", "2006"]);
 }
 
 /**
