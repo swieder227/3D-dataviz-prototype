@@ -61,12 +61,12 @@ function initialize(){
   camera = new THREE.OrthographicCamera( -aspect*view_size / 2, aspect*view_size / 2, view_size / 2, -view_size / 2, -1000, 1000 );
 
   //zoom
-  camera.zoom = 0.85;
+  camera.zoom = 0.75;
   camera.updateProjectionMatrix();
   // position
-  camera.position.x = POSITION_3D.x;
-  camera.position.y = POSITION_3D.y;
-  camera.position.z = POSITION_3D.z;
+  camera.position.x = POSITION_2D.x;
+  camera.position.y = POSITION_2D.y;
+  camera.position.z = POSITION_2D.z;
 
   // Controls
   controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -87,8 +87,8 @@ function initialize(){
   setupGraphsForStory(DATA_BREXIT);
 
   // Labels
-  // setupXAxisLabels(["Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3", "Q4", "Q1", "Q2", "Q3"]);
-  // setupXAxisLabels(["2001", "2002", "2003", "2004", "2005", "2006"]);
+  setupXAxisLabels(["2001", "2002", "2003", "2004", "2005", "2006"]);
+  setupYAxisLabels(["0", "20", "40", "60", "80", "100"]);
 }
 
 /**
@@ -324,7 +324,7 @@ function setupGraphsForStory(dataset){
 function createTextSprite(message, opts){
   let parameters = opts || {};
   let fontface = parameters.fontface || 'Arial';
-  let fontsize = parameters.fontsize || 18;
+  let fontsize = parameters.fontsize || 16;
 
   // multiplier. We'll multiple up the fontsize, then divide down the object.scale
   // Higher # == crisper text rendering. depreciating return for noticible difference ~3.
@@ -339,18 +339,25 @@ function createTextSprite(message, opts){
 
   // get size of text
   let metrics = context.measureText(message);
-  let size = metrics.width * fontsize / 8;
+  // single digits w/ size < 200 weren't centering correctly
+  let size = Math.max(200, Math.floor(metrics.width * fontsize / 8));
 
   // textures render best as squares
   canvas.width = size;
   canvas.height = size;
+
+
+  /*// For Debugging, draw a border to show canvas.
+  context.strokeStyle = "#f00";
+  context.lineWidth = 2;
+  context.strokeRect(0, 0, canvas.width, canvas.height);*/
 
   // style
   context.font = fontsize + "px " + fontface;
   context.fillStyle = 'rgba(0, 0, 0, 1.0)';
   // add text. vertically and horizontall center
   context.textAlign = "center";
-  context.fillText(message, size / 2, size / 2);
+  context.fillText(message, size / 2, size / 2 + fontsize / scale_multiplier);
 
   // canvas contents will be used for a texture
   let texture = new THREE.Texture(canvas)
@@ -388,11 +395,52 @@ function setupXAxisLabels(labels){
     sprite.position.z = -GRID_DIMENSIONS.depth - 2
 
     // y space
-    sprite.position.y = -2;
+    sprite.position.y = -3;
 
     // add to scene
     scene.add(sprite);
   });
+}
+
+function setupYAxisLabels(labels){
+
+  let starting_point = 0;
+  let offset = GRID_DIMENSIONS.height * 2 / (labels.length - 1);
+
+  labels.forEach((label_text, index) => {
+    // create sprite label
+    let sprite = createTextSprite(label_text);
+
+    // position on along axis
+    sprite.position.y = starting_point + (offset * index);
+
+    // position on z axis
+    sprite.position.z = -GRID_DIMENSIONS.depth - 2
+
+    // position outside graph on x
+    sprite.position.x = -GRID_DIMENSIONS.width - 3;
+
+    // add to scene
+    scene.add(sprite);
+  });
+}
+
+// function for drawing rounded rectangles
+function roundRect(ctx, x, y, w, h, r)
+{
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.lineTo(x+w-r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x+w, y+h-r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x+r, y+h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y+r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+    ctx.fill();
+	ctx.stroke();
 }
 
 // animation loop
