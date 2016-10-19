@@ -1,4 +1,4 @@
-var container, scene, renderer, camera, controls, stats, grid_object, all_graphs = [];
+var container, scene, renderer, camera, controls, stats, grid_object, all_graphs = [], all_labels = [];
 
 /**
  * The relative size of the grid/graph in 3D world dimensions
@@ -22,11 +22,18 @@ const GRAPH_COLORS = [0x5E648C, 0x98B9DA, 0x7EA992, 0xA4CBCF];
  * @type {Array} data[x][0] - array of data values with [date,value]
  * @type {Array} data[x][1] - two value array with min/max values for createGraphPlane()
  */
-const DATA_BREXIT = [ [data_brexit_usd, [0,45]], [data_brexit_gbp, [0,45]], [data_brexit_uk, [0,45]], [data_brexit_vix, [0,90]] ];
+const DATA_BREXIT = [ [data_brexit_usd, [0,100]], [data_brexit_gbp, [0,100]], [data_brexit_uk, [0,100]], [data_brexit_vix, [0,100]] ];
 const DATA_HOUSING = [ [data_housing_usfed, [-1,550]], [data_housing_spcs, [0,550]], [data_housing_sp500, [0,550]] ];
 const DATA_MONETARY = [ [data_monetary_usfedfunds, [-1,47.5]], [data_monetary_10yr, [0,47.5]], [data_monetary_unemploy, [0,47.5]], [data_monetary_fedreserve, [0,4750000]] ];
 const DATA_CHINA = [ [data_china_gdp, [0, 100]], [data_china_ctrb, [0, 100]] ];
 const DATA_OIL = [ [data_oil_opec, [0,50000]], [data_oil_non_opec, [0,50000]] ];
+
+// x,y TODO
+const LABELS_BREXIT = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 25, 50, 75, 100] ];
+const LABELS_HOUSING = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 100, 200, 300, 400, 500, 600, 700] ];
+const LABELS_MONETARY = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 10, 20, 30, 40, 50] ];
+const LABELS_CHINA = [ [2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021], ["0%", "25%", "50%", "75%", "100%"] ];
+const LABELS_OIL = [ [1973, 1983, 1994, 2005, 2016], ["0", "12,500", "25,000", "37,500", "50,000"]]
 
 /**
  * Default camera positions
@@ -80,15 +87,9 @@ function initialize(){
   stats = new Stats();
   container.appendChild(stats.dom);
 
-  // Graphs
-  grid_object = setupAllGrids();
+  // Graphs, Data, Labels
+  setupGraphsForStory(DATA_BREXIT, LABELS_BREXIT);
 
-  // Data
-  setupGraphsForStory(DATA_BREXIT);
-
-  // Labels
-  setupXAxisLabels(["2001", "2002", "2003", "2004", "2005", "2006"]);
-  setupYAxisLabels(["0", "20", "40", "60", "80", "100"]);
 }
 
 /**
@@ -118,17 +119,20 @@ function animateCameraPosition(position_vector, anim_duration = 1000){
  * Creates multiple grids, adds to global scene
  * @return {THREE.Object3D} the parent THREE.js object
  */
-function setupAllGrids(){
+function setupAllGrids(x_axis_label_length, y_axis_label_length){
 
   let grid_object = new THREE.Object3D();
   grid_object.name = "graph-grid";
+
+  let x_axis_label_num = x_axis_label_length - 1;// % 2 === 0 ? 10 : 9;
+  let y_axis_label_num = y_axis_label_length - 1;
 
   // Back
   let grid_xy = createGrid({
     width: GRID_DIMENSIONS.height,
     height: GRID_DIMENSIONS.width,
-    linesHeight: 10,
-    linesWidth: 5,
+    linesHeight: x_axis_label_num,
+    linesWidth: y_axis_label_num,
     color: 0xDEDEE0, /*0x0000FF*/
   });
   grid_xy.position.z = GRID_DIMENSIONS.depth;
@@ -137,7 +141,7 @@ function setupAllGrids(){
   let grid_xz = createGrid({
     width: GRID_DIMENSIONS.depth,
     height: GRID_DIMENSIONS.width,
-    linesHeight: 10,
+    linesHeight: x_axis_label_num,
     linesWidth: 1,
     color: 0xDEDEE0, /*0xFF0000*/
   });
@@ -149,7 +153,7 @@ function setupAllGrids(){
     width: GRID_DIMENSIONS.height,
     height: GRID_DIMENSIONS.depth,
     linesHeight: 1,
-    linesWidth: 5,
+    linesWidth: y_axis_label_num,
     color: 0xDEDEE0, /*0x00FF00*/
   });
   grid_yz.position.x = -1 * GRID_DIMENSIONS.width;
@@ -290,24 +294,45 @@ function addCurrentGraphsToScene(){
 }
 
 /**
- * Remove all 3D graphs from the scene,
- * Reset `all_graphs`
+ * Remove all 3D graphs, labels, grids, etc. from the scene
  */
 function removeCurrentGraphsFromScene(){
+  // clear all graphs
   for (var i = all_graphs.length - 1; i >= 0; i--) {
     scene.remove(all_graphs[i]);
   }
   all_graphs = [];
+
+  // clear all labels
+  for (var i = all_labels.length - 1; i >= 0; i--) {
+    scene.remove(all_labels[i]);
+  }
+  all_labels = [];
+
+  // clear grid
+  scene.remove(grid_object);
+  grid_object = undefined;
 }
 
 /**
  * Reset `scene` and draw graphs for a story
  * @param {Array} dataset - constant array of static data
- * @param {Array} data[x][0] - array of data values with [date,value]
- * @param {Array} data[x][1] - two value array with min/max values for createGraphPlane()
+ * @param {Array} dataset[x][0] - array of data values with [date,value]
+ * @param {Array} dataset[x][1] - two value array with min/max values for createGraphPlane()
+ * @param {Array} labels - TODO
  */
-function setupGraphsForStory(dataset){
+function setupGraphsForStory(dataset, labels){
+  // clear everything
   removeCurrentGraphsFromScene();
+
+  // setup grid
+  grid_object = setupAllGrids(labels[0].length, labels[1].length);
+
+  // setup labels
+  setupXAxisLabels(labels[0]);
+  setupYAxisLabels(labels[1]);
+
+  // setup graphs
   dataset.forEach(function(data, index){
       all_graphs.push(createGraphPlane(data[0], data[1], GRAPH_COLORS[index]));
   });
@@ -399,6 +424,9 @@ function setupXAxisLabels(labels){
 
     // add to scene
     scene.add(sprite);
+
+    // add to global array
+    all_labels.push(sprite);
   });
 }
 
@@ -422,25 +450,10 @@ function setupYAxisLabels(labels){
 
     // add to scene
     scene.add(sprite);
-  });
-}
 
-// function for drawing rounded rectangles
-function roundRect(ctx, x, y, w, h, r)
-{
-    ctx.beginPath();
-    ctx.moveTo(x+r, y);
-    ctx.lineTo(x+w-r, y);
-    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
-    ctx.lineTo(x+w, y+h-r);
-    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
-    ctx.lineTo(x+r, y+h);
-    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
-    ctx.lineTo(x, y+r);
-    ctx.quadraticCurveTo(x, y, x+r, y);
-    ctx.closePath();
-    ctx.fill();
-	ctx.stroke();
+    // add to global array
+    all_labels.push(sprite);
+  });
 }
 
 // animation loop
