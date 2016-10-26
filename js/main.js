@@ -345,6 +345,11 @@ function setupGraphsForStory(dataset, labels){
       all_graphs.push(createGraphPlane(data[0], data[1], GRAPH_COLORS[index]));
   });
   addCurrentGraphsToScene();
+
+  // hotspots
+  placeHotspotOnGraph(all_graphs[0], 768);
+  placeHotspotOnGraph(all_graphs[1], 728);
+  placeHotspotOnGraph(all_graphs[3], 2000);
 }
 
 /**
@@ -467,6 +472,42 @@ function setupYAxisLabels(labels){
     // add to global array
     all_labels.push(sprite);
   });
+}
+
+/**
+ * Create a hotspot graphic
+ * @return {THREE.Mesh} The 3D Object to be added to `scene`
+ */
+function createHotspot(){
+  var geometry = new THREE.CircleGeometry( 0.5, 32 );
+  var material = new THREE.MeshBasicMaterial( { color: 0xff0000, side: THREE.DoubleSide } );
+  var circle = new THREE.Mesh( geometry, material );
+  return circle;
+}
+
+/**
+ * Creates and positions a hotspot along a graph
+ * @param  {THREE.Mesh} graph_object - A THREE object for one of the graph planes
+ * @param  {Number} offset_index - the index, offset from 0, to access graph.vertices[i]
+ */
+function placeHotspotOnGraph(graph_object = all_graphs[3], offset_index = 200){
+
+  // derive the length of the data from length of graph
+  // 1/2 bc graph is a polygon with equal top/bottom vertices.
+  let data_length = graph_object.geometry.vertices.length / 2;
+  // find vertex along graph
+  // verticies[0] is last point, verticies[(dataset.length - 1)] is first point
+  let data_point = Math.round( (data_length - 1) - offset_index );
+  // get Vector3 position
+  let vertex_position = graph_object.geometry.vertices[data_point];
+
+  // set pos of hotspot
+  let hotspot = createHotspot();
+  hotspot.position.x = vertex_position.x;
+  hotspot.position.y = vertex_position.y + graph_object.position.y;
+  hotspot.position.z = graph_object.position.z;
+
+  scene.add(hotspot);
 }
 
 // animation loop
