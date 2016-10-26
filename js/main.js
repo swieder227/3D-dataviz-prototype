@@ -22,24 +22,23 @@ const GRAPH_COLORS = [0x5E648C, 0x98B9DA, 0x7EA992, 0xA4CBCF];
  * @type {Array} data[x][0] - array of data values with [date,value]
  * @type {Array} data[x][1] - two value array with min/max values for createGraphPlane()
  */
-const DATA_BREXIT = [ [data_brexit_gbp, [0,150]], [data_brexit_uk, [0,150]], [data_brexit_vix, [0,150]], [data_brexit_msci, [0,150]] ];
-const DATA_HOUSING = [ [data_housing_usfed, [-1,55]], [data_housing_abx, [0,550]], [data_housing_spcs, [0,550]],[data_housing_sp500, [0,550]] ];
-const DATA_MONETARY = [ [data_monetary_usfedfunds, [-1,47.5]], [data_monetary_10yr, [0,47.5]], [data_monetary_unemploy, [0,47.5]], [data_monetary_fedreserve, [0,4750000]] ];
-const DATA_CHINA = [ [data_china_gdp, [0, 25]] ];
-const DATA_OIL = [ [data_oil_msci, [0,1000]] ];
+const DATA_BREXIT = [ [data_brexit_gbp, [0,15]], [data_brexit_vix, [0,150]], [data_brexit_uk, [0,15]], [data_brexit_msci, [0,150]] ];
+const DATA_HOUSING = [ [data_housing_usfed, [-1,60]], [data_housing_abx, [0,600]], [data_housing_spcs, [0,600]],[data_housing_sp500, [0,600]] ];
+const DATA_MONETARY = [ [data_monetary_10yr, [0,50]], [data_monetary_usfedfunds, [-1,50]],  [data_monetary_unemploy, [0,50]], [data_monetary_fedreserve, [0,5000000]] ];
+const DATA_CHINA = [ [data_china_gdp, [0, 60]], [data_china_sp500, [0, 6000]], [data_china_cny, [0, 0.6]], [data_china_shanghai, [0, 6000]] ];
+const DATA_OIL = [ [data_oil_opec, [0, 150000]], [data_oil_non_opec, [0, 150000]], [data_oil_msci, [0,1500]], [data_oil_crude, [0, 150]] ];
 
 /**
  * X/Y Axis labels per PIMCO story
  * @type {Array} An array with two or three entries
  * @type {Array} label[0] - An array of labels for the X axis
  * @type {Array} label[1] - An array of labels for the Y axis
- * @type {Array} label[2] (optional) - An array of labels for the secondary Y axis
  */
-const LABELS_BREXIT = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 50, 100, 150] ];
-const LABELS_HOUSING = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 100, 200, 300, 400, 500, 600], [0, 10, 20, 30, 40, 50, 60] ];
+const LABELS_BREXIT = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 5, 10, 15] ];
+const LABELS_HOUSING = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 1, 2, 3, 4, 5, 6] ];
 const LABELS_MONETARY = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 10, 20, 30, 40, 50] ];
-const LABELS_CHINA = [ [2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021], ["0%", "5%", "10%", "15%", "20%", "25%"] ];
-const LABELS_OIL = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 200, 400, 600, 800, 1000]]
+const LABELS_CHINA = [ [2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021], [0, 1, 2, 3, 4, 5, 6] ];
+const LABELS_OIL = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 3, 6, 9, 12, 15] ];
 
 /**
  * Default camera positions
@@ -77,9 +76,9 @@ function initialize(){
   camera.zoom = 0.85;
   camera.updateProjectionMatrix();
   // position
-  camera.position.x = POSITION_2D.x;
-  camera.position.y = POSITION_2D.y;
-  camera.position.z = POSITION_2D.z;
+  camera.position.x = POSITION_3D.x;
+  camera.position.y = POSITION_3D.y;
+  camera.position.z = POSITION_3D.z;
 
   // Controls
   controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -95,7 +94,7 @@ function initialize(){
   container.appendChild(stats.dom);
 
   // Graphs, Data, Labels
-  setupGraphsForStory(DATA_HOUSING, LABELS_HOUSING);
+  setupGraphsForStory(DATA_BREXIT, LABELS_BREXIT);
 
 }
 
@@ -285,7 +284,7 @@ function createGraphPlane(data = [], min_max_range = [0, 1], color = COLOR_BLUE_
 function addCurrentGraphsToScene(){
 
   // ammount of space between graphs
-  let between_offset = 3;
+  let between_offset = 5;
 
   // iterate over all graphs
   for (var i = 0; i < all_graphs.length; i++) {
@@ -329,7 +328,6 @@ function removeCurrentGraphsFromScene(){
  * @param {Array} labels - constant array of label
  * @param {Array} labels[0] - X Axis
  * @param {Array} labels[1] - Y Axis
- * @param {Array} labels[2] (optional) - secondary Y Axis
  */
 function setupGraphsForStory(dataset, labels){
   // clear everything
@@ -341,9 +339,6 @@ function setupGraphsForStory(dataset, labels){
   // setup labels
   setupXAxisLabels(labels[0]);
   setupYAxisLabels(labels[1]);
-  if(labels[2]){
-    setupYAxisLabels(labels[2], false);
-  }
 
   // setup graphs
   dataset.forEach(function(data, index){
@@ -447,9 +442,8 @@ function setupXAxisLabels(labels){
  * Evenly distribute labels along the Y axis
  * Adding them to the global `scene`
  * @param  {Array} labels - array of strings. One for each label.
- * @param  {Boolean} is_primary - primary is drawn on the right-front side, !primrary drawn on the left-back
  */
-function setupYAxisLabels(labels, is_primary = true){
+function setupYAxisLabels(labels){
 
   let starting_point = 0;
   let offset = GRID_DIMENSIONS.height * 2 / (labels.length - 1);
@@ -462,18 +456,10 @@ function setupYAxisLabels(labels, is_primary = true){
     sprite.position.y = starting_point + (offset * index);
 
     // position on z axis
-    if(is_primary){
-      sprite.position.z = -GRID_DIMENSIONS.depth - 2
-    } else {
-      sprite.position.z = GRID_DIMENSIONS.depth + 2
-    }
+    sprite.position.z = -GRID_DIMENSIONS.depth - 2
 
     // position outside graph on x
-    if(is_primary){
-      sprite.position.x = -GRID_DIMENSIONS.width - 3;
-    } else {
-      sprite.position.x = GRID_DIMENSIONS.width + 3;
-    }
+    sprite.position.x = -GRID_DIMENSIONS.width - 3;
 
     // add to scene
     scene.add(sprite);
