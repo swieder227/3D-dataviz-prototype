@@ -2,8 +2,10 @@
 var container, scene, renderer,
 /* camera related + helpers */
     camera, controls, stats,
-/* objects in scene */
-    grid_object, all_graphs = [], all_labels = [], all_hotspots = [],
+/* all currently active: objects in scene + data */
+    grid_object, all_graphs = [], all_labels = [], all_hotspots = [], all_data_values = [],
+/* hover objects */
+    all_hover_planes = [], all_hover_points = [],
 /* mouse tracking */
     mouse, raycaster;
 
@@ -108,6 +110,9 @@ function initialize(){
   // Graphs, Data, Labels
   setupGraphsForStory(DATA_BREXIT, LABELS_BREXIT);
 
+  // TODO
+  setupHoverPlanes();
+
   // Event Handlers
   bindEventHandlers();
 
@@ -198,7 +203,7 @@ function setupAllGrids(x_axis_label_length, y_axis_label_length){
   grid_yz.position.x = -1 * GRID_DIMENSIONS.width;
   grid_yz.rotateY(Math.PI / 2);
 
-  grid_object.add( grid_xy ).add( grid_xz ).add( grid_yz );
+  grid_object.add( grid_xy, grid_xz, grid_yz );
   grid_object.position.y = GRID_DIMENSIONS.height;
   scene.add( grid_object );
 
@@ -360,6 +365,9 @@ function resetCurrentScene(){
   // clear grid
   scene.remove(grid_object);
   grid_object = undefined;
+
+  // clear data
+  all_data_values = [];
 }
 
 /**
@@ -385,7 +393,10 @@ function setupGraphsForStory(dataset, labels){
 
   // setup graphs
   dataset.forEach(function(data, index){
+      // create 3D plane
       all_graphs.push(createGraphPlane(data[0], data[1], GRAPH_COLORS[index]));
+      // save values for later
+      all_data_values.push(data[0]);
   });
   addCurrentGraphsToScene();
 
@@ -556,6 +567,10 @@ function placeHotspotOnGraph(graph_object = all_graphs[3], offset_index = 200){
   return hotspot;
 }
 
+/**
+ * TODO
+ * @return {[type]} [description]
+ */
 function checkRaycastHotspots(){
   // calculate objects intersecting the picking ray
   var intersects = raycaster.intersectObjects( all_hotspots );
@@ -564,6 +579,79 @@ function checkRaycastHotspots(){
     console.log(intersects[0]);
     alert("Hotspot clicked.");
     // intersects[0].object.material.color.set( 0x0000ff );
+  }
+}
+
+/**
+ * TODO
+ * @return {[type]} [description]
+ */
+function setupHoverPlanes(){
+
+  var geometry_bottom = new THREE.PlaneGeometry( GRID_DIMENSIONS.width * 2, GRID_DIMENSIONS.depth * 2, 1, 1 );
+  var geometry_back = new THREE.PlaneGeometry( GRID_DIMENSIONS.width * 2, GRID_DIMENSIONS.height * 2, 1, 1 );
+
+  // material
+  var material = new THREE.MeshBasicMaterial( {color: 0x000000, side: THREE.DoubleSide, wireframe: true} );
+
+  // bundle geo + material
+  var plane_bottom = new THREE.Mesh( geometry_bottom, material );
+  plane_bottom.rotateX(Math.PI / 2);
+
+  var plane_back = new THREE.Mesh( geometry_back, material );
+  plane_back.position.z = GRID_DIMENSIONS.depth;
+  plane_back.position.y = GRID_DIMENSIONS.height;
+
+  scene.add( plane_bottom, plane_back );
+
+  all_hover_planes.push( plane_bottom, plane_back );
+}
+
+/**
+ * TODO
+ * @return {[type]} [description]
+ */
+var TEMP_ONCE = false;
+function checkRaycastHoverPlanes(){
+  var intersects = raycaster.intersectObjects( all_hover_planes );
+
+  if(intersects.length > 0 && !TEMP_ONCE){
+    console.log(intersects[0].point.x);
+
+    var intersect_x_axis = intersects[0].point.x;
+
+    // map over all graphs
+    // calc vertex position based on raycast intersects
+    // and save value at that point
+    var graph_points = all_graphs.map(function(graph_object, index){
+
+      // TODO
+      var dataset = all_data_values[index];
+      var data_length = Math.floor( dataset.length );
+
+      // Convert the intersection point in 3D world coords to a vertex index along the graph
+      var normalized_vertex_index = mapRange(
+                                             /* from grid dimensions in 3d coords */
+                                             [GRID_DIMENSIONS.width, -GRID_DIMENSIONS.width],
+                                             /* to an index in the data */
+                                             [(data_length - 1), 0],
+                                             /* given world coord of raycast intersection */
+                                             intersect_x_axis
+                                           );
+
+      // remove any fractions
+      normalized_vertex_index = Math.floor(normalized_vertex_index);
+
+      // return vertex at given index
+      // vertex is a THREE.Vector3, BUT w/ the value appended in createGraphPlane()
+      return all_graphs[index].geometry.vertices[normalized_vertex_index];
+
+    });
+
+    console.log(graph_points);
+
+    TEMP_ONCE = true;
+
   }
 }
 
@@ -591,6 +679,7 @@ function animate(){
   stats.update();
   TWEEN.update();
   raycastUpdate();
+  checkRaycastHoverPlanes();
   render();
 }
 
