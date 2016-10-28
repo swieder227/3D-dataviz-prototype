@@ -588,11 +588,14 @@ function checkRaycastHotspots(){
  */
 function setupHoverPlanes(){
 
+  /*
+  * Setup planes for raycasting
+  */
   var geometry_bottom = new THREE.PlaneGeometry( GRID_DIMENSIONS.width * 2, GRID_DIMENSIONS.depth * 2, 1, 1 );
   var geometry_back = new THREE.PlaneGeometry( GRID_DIMENSIONS.width * 2, GRID_DIMENSIONS.height * 2, 1, 1 );
 
   // material
-  var material = new THREE.MeshBasicMaterial( {color: 0x000000, side: THREE.DoubleSide, wireframe: true} );
+  var material = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide, transparent: true, opacity: 0 });
 
   // bundle geo + material
   var plane_bottom = new THREE.Mesh( geometry_bottom, material );
@@ -605,17 +608,32 @@ function setupHoverPlanes(){
   scene.add( plane_bottom, plane_back );
 
   all_hover_planes.push( plane_bottom, plane_back );
+
+  /*
+  * Setup points
+  */
+  for (var i = 0; i <= 3; i++) {
+
+    // create hotspot object
+    var point = createHotspot();
+
+    // hide by default
+    point.visible = false;
+
+    all_hover_points.push(point);
+    scene.add(point);
+  }
+
 }
 
 /**
  * TODO
  * @return {[type]} [description]
  */
-var TEMP_ONCE = false;
 function checkRaycastHoverPlanes(){
   var intersects = raycaster.intersectObjects( all_hover_planes );
 
-  if(intersects.length > 0 && !TEMP_ONCE){
+  if(intersects.length > 0){
     console.log(intersects[0].point.x);
 
     var intersect_x_axis = intersects[0].point.x;
@@ -623,7 +641,7 @@ function checkRaycastHoverPlanes(){
     // map over all graphs
     // calc vertex position based on raycast intersects
     // and save value at that point
-    var graph_points = all_graphs.map(function(graph_object, index){
+    var graph_vertices = all_graphs.map(function(graph_object, index){
 
       // TODO
       var dataset = all_data_values[index];
@@ -640,18 +658,33 @@ function checkRaycastHoverPlanes(){
                                            );
 
       // remove any fractions
-      normalized_vertex_index = Math.floor(normalized_vertex_index);
+      normalized_vertex_index = Math.round(normalized_vertex_index);
 
       // return vertex at given index
-      // vertex is a THREE.Vector3, BUT w/ the value appended in createGraphPlane()
+      // vertex is a THREE.Vector3, BUT w/ the value appended from createGraphPlane()
       return all_graphs[index].geometry.vertices[normalized_vertex_index];
 
     });
 
-    console.log(graph_points);
+    // create points along graphs
+    graph_vertices.forEach(function(graph_point, index){
 
-    TEMP_ONCE = true;
+      var point = all_hover_points[index];
+      point.visible = true;
+      point.position.x = graph_vertices[index].x;
+      point.position.y = graph_vertices[index].y + all_graphs[index].position.y;
+      point.position.z = all_graphs[index].position.z;
 
+    });
+
+
+  } else {
+    // if no intersection, hide the points
+    if(all_hover_points[0].visible){
+      all_hover_points.forEach(function(point){
+        point.visible = false;
+      });
+    }
   }
 }
 
@@ -672,6 +705,9 @@ function raycastUpdate(){
 
 }
 
+// TODO do we need a throttle checkRaycastHoverPlanes() ??
+// var frame_throttle = 0;
+
 // animation loop
 function animate(){
   requestAnimationFrame( animate );
@@ -679,7 +715,14 @@ function animate(){
   stats.update();
   TWEEN.update();
   raycastUpdate();
-  checkRaycastHoverPlanes();
+
+  // if(frame_throttle > 2){
+  //   frame_throttle = 0;
+    checkRaycastHoverPlanes();
+  // } else {
+  //   frame_throttle++;
+  // }
+
   render();
 }
 
