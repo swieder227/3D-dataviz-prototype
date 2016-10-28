@@ -5,7 +5,7 @@ var container, scene, renderer,
 /* all currently active: objects in scene + data */
     grid_object, all_graphs = [], all_labels = [], all_hotspots = [], all_data_values = [],
 /* hover objects */
-    all_hover_planes = [], all_hover_points = [],
+    all_hover_planes = [], group_hover_points, group_hover_labels, hover_connect_line,
 /* mouse tracking */
     mouse, raycaster;
 
@@ -110,8 +110,8 @@ function initialize(){
   // Graphs, Data, Labels
   setupGraphsForStory(DATA_BREXIT, LABELS_BREXIT);
 
-  // TODO
-  setupHoverPlanes();
+  // Objects for hover functionality
+  setupHoverFuncObjects();
 
   // Event Handlers
   bindEventHandlers();
@@ -291,7 +291,6 @@ function createGraphPlane(data = [], min_max_range = [0, 1], color = COLOR_BLUE_
     // calculate the position within graph space based on data_point
     // mapRange() scales two ranges, data range <=> graph range
     // subtract graph_y_offset to position geometry on graph
-    // TODO check perf. consider underscore or d3
     let relative_position_y = mapRange([ min_max_range[0], min_max_range[1]], [0, graph_height], data_point) - graph_y_offset;
 
     // verticies[0] is last point on x axis, verticies[data.length - 1] is the first
@@ -530,11 +529,13 @@ function setupYAxisLabels(labels){
 
 /**
  * Create a hotspot graphic
+ * @param {Hex} color - the base color to shade material
+ * @param {Number} radius - size of hotspot in 3D world coords
  * @return {THREE.Mesh} The 3D Object to be added to `scene`
  */
-function createHotspot(){
-  var geometry = new THREE.SphereGeometry( 0.45, 32, 32 );
-  var material = new THREE.MeshBasicMaterial( { color: 0x1374B8, side: THREE.DoubleSide } );
+function createHotspot(color = 0x1374B8, radius = 0.45){
+  var geometry = new THREE.SphereGeometry( radius, 32, 32 );
+  var material = new THREE.MeshBasicMaterial( { color: color, side: THREE.DoubleSide } );
   var circle = new THREE.Mesh( geometry, material );
   return circle;
 }
@@ -568,8 +569,7 @@ function placeHotspotOnGraph(graph_object = all_graphs[3], offset_index = 200){
 }
 
 /**
- * TODO
- * @return {[type]} [description]
+ * Checks if mouse intersects w/ any 3D objects in all_hotspots
  */
 function checkRaycastHotspots(){
   // calculate objects intersecting the picking ray
@@ -583,10 +583,11 @@ function checkRaycastHotspots(){
 }
 
 /**
- * TODO
- * @return {[type]} [description]
+ * Setup all of the components required for the hover effect
+ * 'Hover effect' = hovering over the graph areas, draws aligned points on each plane and connecting line
+ * All objects will later be updated in checkRaycastHoverPlanes();
  */
-function setupHoverPlanes(){
+function setupHoverFuncObjects(){
 
   /*
   * Setup planes for raycasting
@@ -612,29 +613,44 @@ function setupHoverPlanes(){
   /*
   * Setup points
   */
+  group_hover_points = new THREE.Object3D();
+  group_hover_points.visible = false;
+
+  /*
+  * Setup line to connect points
+  */
+  var line_material = new THREE.LineBasicMaterial({ color: 0x555555 });
+  var line_geometry = new THREE.Geometry();
+  hover_connect_line = new THREE.Line(line_geometry, line_material);
+  hover_connect_line.visible = false;
+
+  /*
+  * Add placeholder hotspots + line vertices
+  */
   for (var i = 0; i <= 3; i++) {
+    // hotspot
+    var point = createHotspot(0x111111, 0.25);
+    group_hover_points.add(point);
 
-    // create hotspot object
-    var point = createHotspot();
-
-    // hide by default
-    point.visible = false;
-
-    all_hover_points.push(point);
-    scene.add(point);
+    // vertex
+    line_geometry.vertices.push(new THREE.Vector3(0,0,0))
   }
 
+  // add everything to scene
+  // should be visible = false;
+  scene.add( group_hover_points, hover_connect_line);
 }
 
 /**
- * TODO
- * @return {[type]} [description]
+ * Detects if mouse is intersecting with the grid/graphs
+ * Then calculates position along X axis for each graph plane
+ * Creates a 3D point on each vertex and updates a line to connect them
  */
 function checkRaycastHoverPlanes(){
-  var intersects = raycaster.intersectObjects( all_hover_planes );
+  var intersects = raycaster.intersectObjects( all_hover_planes.concat(all_graphs) );
 
   if(intersects.length > 0){
-    console.log(intersects[0].point.x);
+    // console.log(camera.rotation);
 
     var intersect_x_axis = intersects[0].point.x;
 
@@ -643,7 +659,7 @@ function checkRaycastHoverPlanes(){
     // and save value at that point
     var graph_vertices = all_graphs.map(function(graph_object, index){
 
-      // TODO
+      // corresponding dataset per graph
       var dataset = all_data_values[index];
       var data_length = Math.floor( dataset.length );
 
@@ -666,24 +682,46 @@ function checkRaycastHoverPlanes(){
 
     });
 
-    // create points along graphs
+    // clear previous labels
+    scene.remove(group_hover_labels);
+    group_hover_labels = new THREE.Object3D();
+
+    // update position of points along graphs
     graph_vertices.forEach(function(graph_point, index){
 
-      var point = all_hover_points[index];
-      point.visible = true;
+      // circle indicator on graph
+      var point = group_hover_points.children[index];
       point.position.x = graph_vertices[index].x;
       point.position.y = graph_vertices[index].y + all_graphs[index].position.y;
       point.position.z = all_graphs[index].position.z;
 
+      // sprite label
+      var label = createTextSprite(graph_vertices[index].value);
+      label.position.copy(point.position);
+      label.position.x -= 2;
+      label.position.y += 1;
+      group_hover_labels.add(label);
+
+      // line
+      hover_connect_line.geometry.vertices[index].copy(point.position);
+      hover_connect_line.geometry.verticesNeedUpdate = true;
+
     });
+
+    // add points to scene via visibility
+    group_hover_points.visible = true;
+    hover_connect_line.visible = true;
+
+    // add all labels
+    scene.add(group_hover_labels);
 
 
   } else {
     // if no intersection, hide the points
-    if(all_hover_points[0].visible){
-      all_hover_points.forEach(function(point){
-        point.visible = false;
-      });
+    if(group_hover_points.visible){
+      group_hover_points.visible = false;
+      hover_connect_line.visible = false;
+      scene.remove(group_hover_labels);
     }
   }
 }
@@ -705,9 +743,6 @@ function raycastUpdate(){
 
 }
 
-// TODO do we need a throttle checkRaycastHoverPlanes() ??
-// var frame_throttle = 0;
-
 // animation loop
 function animate(){
   requestAnimationFrame( animate );
@@ -716,12 +751,8 @@ function animate(){
   TWEEN.update();
   raycastUpdate();
 
-  // if(frame_throttle > 2){
-  //   frame_throttle = 0;
-    checkRaycastHoverPlanes();
-  // } else {
-  //   frame_throttle++;
-  // }
+  // TODO if mobile, then don't run every frame
+  checkRaycastHoverPlanes();
 
   render();
 }
