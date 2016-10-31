@@ -62,7 +62,9 @@ const ASPECT = window.innerWidth / window.innerHeight;
  * @type {THREE.Vector3} { x, y, z }
  */
 const POSITION_2D = new THREE.Vector3(0, 0, -VIEW_SIZE);
-const POSITION_3D = new THREE.Vector3(0.8, 0.55, -VIEW_SIZE);
+const POSITION_3D = new THREE.Vector3(85, 40, -VIEW_SIZE);
+
+
 
 /**
  * Init all ThreeJS components
@@ -143,7 +145,7 @@ function onMouseMove( event ) {
  */
 function animateCameraPosition(position_vector, anim_duration = 1000){
 
-  let ease_curve = TWEEN.Easing.Cubic.Out;
+  let ease_curve = TWEEN.Easing.Cubic.InOut;
 
   // tween camera position
   let tween = new TWEEN.Tween(camera.position)
