@@ -402,9 +402,10 @@ function setupGraphsForStory(dataset, labels){
   addCurrentGraphsToScene();
 
   // hotspots
-  all_hotspots.push(placeHotspotOnGraph(all_graphs[0], 0));
-  all_hotspots.push(placeHotspotOnGraph(all_graphs[1], dataset[1][0].length / 2));
-  all_hotspots.push(placeHotspotOnGraph(all_graphs[3], dataset[3][0].length - 1));
+  all_hotspots.push(placeHotspotOnGraph(0, 0));
+  all_hotspots.push(placeHotspotOnGraph(1, dataset[1][0].length * 0.25));
+  all_hotspots.push(placeHotspotOnGraph(2, dataset[2][0].length * 0.75));
+  all_hotspots.push(placeHotspotOnGraph(3, dataset[3][0].length - 1));
 }
 
 /**
@@ -544,18 +545,18 @@ function createHotspot(color = 0x1374B8, radius = 0.45){
 
 /**
  * Creates and positions a hotspot along a graph
- * @param  {THREE.Mesh} graph_object - A THREE object for one of the graph planes
+ * @param  {Number} graph_index - The index in all_graphs && all_data_values
  * @param  {Number} offset_index - the index, offset from 0, to access graph.vertices[i]
  * @return The hotspot THREE.mesh after positioning and adding to scene
  */
-function placeHotspotOnGraph(graph_object = all_graphs[3], offset_index = 200){
-
-  // derive the length of the data from length of graph
-  // 1/2 bc graph is a polygon with equal top/bottom vertices.
-  let data_length = Math.floor( graph_object.geometry.vertices.length / 2);
-  // find vertex along graph
+function placeHotspotOnGraph(graph_index = 0, offset_index = 200){
+  // find vertex index
   // verticies[0] is last point, verticies[(dataset.length - 1)] is first point
-  let data_point = (data_length - 1) - Math.floor(offset_index);
+  let data_point = (all_data_values[graph_index].length - 1) - Math.floor(offset_index);
+
+  // graph 3D object
+  let graph_object = all_graphs[graph_index];
+
   // get Vector3 position
   let vertex_position = graph_object.geometry.vertices[data_point];
 
@@ -731,7 +732,6 @@ function checkRaycastHoverPlanes(){
 /**
  * Updates raycast origin/direction based on mouse/camera coords
  * Generic fn for the animate() loop
- * @return {[type]} [description]
  */
 function raycastUpdate(){
 
