@@ -23,7 +23,7 @@ const GRID_DIMENSIONS = {
  * All colors to iterate over when drawing graph planes
  * @type {Array} of hex colors
  */
-const GRAPH_COLORS = [0x5E648C, 0x98B9DA, 0x7EA992, 0xA4CBCF];
+const GRAPH_COLORS = ['#acc37f', '#659bb0', '#89898e', '#3fbfad'];
 
 /**
  * All data to graph a story
@@ -49,6 +49,15 @@ const LABELS_MONETARY = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014,
 const LABELS_CHINA = [ [2000, 2003, 2006, 2009, 2012, 2015, 2018, 2021], [0, 1, 2, 3, 4, 5, 6] ];
 const LABELS_OIL = [ [2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016], [0, 3, 6, 9, 12, 15] ];
 
+/**
+ * Array labels per story
+ * @type {Array} An array of strings to correspond w/ each graph
+ */
+ const LEGEND_BREXIT = [ 'GBP/USD (£/$)', 'VIX ($10)', 'UK 10 Year Yield (%)', 'MSCI Europe Financials ($10)' ];
+ const LEGEND_HOUSING = [ 'US Fed Funds (%)', 'ABX ($100)', 'SP Case-Shiller ($100)', 'SP 500 ($100)' ];
+ const LEGEND_MONETARY = [ '10 Year Yield (%)', 'US Fed Funds (%)', 'US Unemployment (%)', 'Federal Reserve ($100B)' ];
+ const LEGEND_CHINA = [ 'China GDP (10%)', 'SP China 500 (¥1000)', 'CNY/USD (¥/$)', 'Shanghai Composite (¥1000)' ];
+ const LEGEND_OIL = [ 'OPEC (10M barrels/day)', 'NON-OPEC (10M barrels/day)', 'MSCI Emerging Markets ($100)', 'Brent Crude Oil ($10/barrel)' ];
 
 /**
  * Constants used for sizing/positiong the camera
@@ -110,7 +119,7 @@ function initialize(){
   raycaster = new THREE.Raycaster();
 
   // Graphs, Data, Labels
-  setupGraphsForStory(DATA_BREXIT, LABELS_BREXIT);
+  setupGraphsForStory(DATA_BREXIT, LABELS_BREXIT, LEGEND_BREXIT);
 
   // Objects for hover functionality
   setupHoverFuncObjects();
@@ -379,8 +388,9 @@ function resetCurrentScene(){
  * @param {Array} labels - constant array of label
  * @param {Array} labels[0] - X Axis
  * @param {Array} labels[1] - Y Axis
+ * @param {Array} legends - array of strings to update legend
  */
-function setupGraphsForStory(dataset, labels){
+function setupGraphsForStory(dataset, labels, legends){
 
   // clear everything
   resetCurrentScene();
@@ -406,6 +416,9 @@ function setupGraphsForStory(dataset, labels){
   all_hotspots.push(placeHotspotOnGraph(1, dataset[1][0].length * 0.25));
   all_hotspots.push(placeHotspotOnGraph(2, dataset[2][0].length * 0.75));
   all_hotspots.push(placeHotspotOnGraph(3, dataset[3][0].length - 1));
+
+  // legend
+  htmlUpdateLegend(legends);
 }
 
 /**
@@ -759,6 +772,26 @@ function raycastUpdate(){
   // update the picking ray with the camera and mouse position
   raycaster.setFromCamera( mouse, camera );
 
+}
+
+/**
+ * Rewrite legend DOM w/ new HTML contents
+ * TODO Temporary. Just for prototype purposes
+ * @param  {[type]} legend_labels [description]
+ * @return {[type]}               [description]
+ */
+function htmlUpdateLegend(legend_labels){
+  let $legend = $("#legend");
+  $legend.html('');
+
+  legend_labels.forEach(function(label, index){
+    let div = $("<div/>")
+                .html(label)
+                .addClass("legend__item")
+                .append($("<div/>").addClass('legend__circle').css('background', GRAPH_COLORS[index]))
+
+    $legend.append(div);
+  });
 }
 
 // animation loop
