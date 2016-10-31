@@ -655,6 +655,7 @@ function checkRaycastHoverPlanes(){
   if(intersects.length > 0){
     // console.log(camera.rotation);
 
+    // intersection obj returned from raycaster
     var intersect_x_axis = intersects[0].point.x;
 
     // map over all graphs
@@ -689,6 +690,9 @@ function checkRaycastHoverPlanes(){
     scene.remove(group_hover_labels);
     group_hover_labels = new THREE.Object3D();
 
+    // change positioning of labels based on camera angle
+    var should_adj_label_for_2d = controls.getPolarAngle() > 1.4 ? true : false;
+
     // update position of points along graphs
     graph_vertices.forEach(function(graph_point, index){
 
@@ -698,22 +702,34 @@ function checkRaycastHoverPlanes(){
       point.position.y = graph_vertices[index].y + all_graphs[index].position.y;
       point.position.z = all_graphs[index].position.z;
 
-      // sprite label
+      // create new sprite label
       var label = createTextSprite(graph_vertices[index].value);
       label.position.copy(point.position);
-      label.position.x -= 2;
-      label.position.y += 1;
+      label.position.x -= label.scale.x / 2;
+
+      // if we're close to 2d view,
+      // line up labels in vertical stack
+      if(should_adj_label_for_2d){
+        label.position.y = 4 + index * 4;
+        label.position.z -= 0.5;
+      } else {
+        label.position.y += 1;
+      }
+
+      // add to group
       group_hover_labels.add(label);
 
-      // line
-      hover_connect_line.geometry.vertices[index].copy(point.position);
-      hover_connect_line.geometry.verticesNeedUpdate = true;
+      // update line to connect new point pos
+      hover_connect_line.geometry.vertices[index].copy(point.position)
 
     });
 
     // add points to scene via visibility
     group_hover_points.visible = true;
     hover_connect_line.visible = true;
+
+    // set line to update in render fn
+    hover_connect_line.geometry.verticesNeedUpdate = true;
 
     // add all labels
     scene.add(group_hover_labels);
