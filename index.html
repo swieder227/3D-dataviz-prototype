@@ -3,15 +3,22 @@
 	<head>
 		<meta charset=utf-8>
 		<title>Three.js Dataviz Prototype</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<style>
 			body { margin: 0; overflow: hidden; }
       #container { position: absolute; }
 			#ui-left { position: absolute; bottom: 0; left: 0;}
 			#ui-right { position: absolute; bottom: 0; right: 0;}
+
 			#legend { position: absolute; top: 0; right: 0; display: flex; background: rgba(255,255,255, 0.35); }
 			.legend__item { font-family: 'Arial'; margin: 10px; display: flex; }
 			.legend__circle { border-radius: 50%; width: 18px; height: 18px; margin: 0 5px; }
+
 			canvas { width: 100%; height: 100% }
+
+			@media (max-width: 768px) {
+				#mobile-detect { display: none; }
+			}
 		</style>
 	</head>
 	<body>
@@ -28,6 +35,7 @@
 			<button onclick="animateCameraPosition(POSITION_3D);">3D Camera</button>
 		</div>
 		<div id="legend"></div>
+		<div id="mobile-detect"></div>
 
 		<script src="js/data/brexit/Brexit-GBPUSD-ARRAY.js"></script>
 		<script src="js/data/brexit/Brexit-UK10YearYield-ARRAY.js"></script>

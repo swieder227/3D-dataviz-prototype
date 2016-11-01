@@ -73,7 +73,11 @@ const ASPECT = window.innerWidth / window.innerHeight;
 const POSITION_2D = new THREE.Vector3(0, 0, -VIEW_SIZE);
 const POSITION_3D = new THREE.Vector3(85, 40, -VIEW_SIZE);
 
-
+/**
+ * If viewport is mobile sized
+ * @type {Boolean}
+ */
+let IS_MOBILE = isMobile();
 
 /**
  * Init all ThreeJS components
@@ -133,18 +137,40 @@ function initialize(){
  * Add JS event handlers
  */
 function bindEventHandlers(){
-  window.addEventListener( 'mousemove', onMouseMove, false );
+
+  if(IS_MOBILE){
+    window.addEventListener( 'touchstart', updateTouchVector, false );
+    window.addEventListener( 'touchstart', checkRaycastHoverPlanes, false);
+  } else {
+    window.addEventListener( 'mousemove', updateMouseVector, false );
+  }
+
   window.addEventListener( 'mouseup', checkRaycastHotspots, false);
 }
 
 /**
  * On mouse movement events, update the mouse vector coordinates
  * Normalizes screen coords to 3d coords.
- * @param  {Event} event - event object from 'mousemove'
+ * @param  {Event} event - mouse event object
  */
-function onMouseMove( event ) {
+function updateMouseVector( event ) {
 	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+}
+
+/**
+ * On touch event, update the mouse vector coordinates
+ * nearly identical to updateMouseVector, diff clinetX property and triggers raycast update
+ * @param  {Event} event - touch event object
+ * @return {[type]}       [description]
+ */
+function updateTouchVector( event ) {
+  mouse.x = ( event.touches[0].clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.touches[0].clientY / window.innerHeight ) * 2 + 1;
+
+  // trigger raycast class to update
+  // bc on mobile we're not updating every frame
+  raycastUpdate();
 }
 
 /**
@@ -667,7 +693,6 @@ function checkRaycastHoverPlanes(){
   var intersects = raycaster.intersectObjects( all_hover_planes.concat(all_graphs) );
 
   if(intersects.length > 0){
-    // console.log(camera.rotation);
 
     // intersection obj returned from raycaster
     var intersect_x_axis = intersects[0].point.x;
@@ -794,16 +819,21 @@ function htmlUpdateLegend(legend_labels){
   });
 }
 
+function isMobile(){
+  return $("#mobile-detect").css('display') === 'none' ? true : false;
+}
+
 // animation loop
 function animate(){
   requestAnimationFrame( animate );
   controls.update();
   stats.update();
   TWEEN.update();
-  raycastUpdate();
 
-  // TODO if mobile, then don't run every frame
-  checkRaycastHoverPlanes();
+  if(!IS_MOBILE){
+    raycastUpdate();
+    checkRaycastHoverPlanes();
+  }
 
   render();
 }
