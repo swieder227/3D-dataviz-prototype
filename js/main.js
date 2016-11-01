@@ -432,6 +432,7 @@ function createTextSprite(message, opts){
   let parameters = opts || {};
   let fontface = parameters.fontface || 'Arial';
   let fontsize = parameters.fontsize || 16;
+  let has_depth = parameters.has_depth !== undefined ? parameters.has_depth : true;
 
   // multiplier. We'll multiple up the fontsize, then divide down the object.scale
   // Higher # == crisper text rendering. depreciating return for noticible difference ~3.
@@ -472,7 +473,7 @@ function createTextSprite(message, opts){
   texture.needsUpdate = true;
 
   // sprite object
-  let spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+  let spriteMaterial = new THREE.SpriteMaterial({ map: texture, depthTest: has_depth });
   let sprite = new THREE.Sprite(spriteMaterial);
 
   // scale down the sprite
@@ -716,7 +717,7 @@ function checkRaycastHoverPlanes(){
       point.position.z = all_graphs[index].position.z;
 
       // create new sprite label
-      var label = createTextSprite(graph_vertices[index].value);
+      var label = createTextSprite(graph_vertices[index].value, { has_depth: false });
       label.position.copy(point.position);
       label.position.x -= label.scale.x / 2;
 
@@ -777,8 +778,7 @@ function raycastUpdate(){
 /**
  * Rewrite legend DOM w/ new HTML contents
  * TODO Temporary. Just for prototype purposes
- * @param  {[type]} legend_labels [description]
- * @return {[type]}               [description]
+ * @param  {Array} list of strings for text labels
  */
 function htmlUpdateLegend(legend_labels){
   let $legend = $("#legend");
