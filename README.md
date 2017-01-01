@@ -13,6 +13,8 @@ Creating an interactive 3D X/Y graph prototype with WebGL/ThreeJS.
 - Orthographic camera
 - Controls for desktop + mobile
 - Axis Labels
+- Hover raycasting to reveal data points
+- Hotspots placed along graph
 
 Using this prototype, you can input arrays of data to display interactive line or area graphs. For example, the original use case was to display financial stocks prices on Y-axis and time on X-axis. 
 
